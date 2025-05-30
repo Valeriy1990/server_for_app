@@ -7,7 +7,13 @@ from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.widget import Widget
-from kivy.graphics import BoxShadow, Color
+from kivy.graphics import BoxShadow, Color, RoundedRectangle
+# from kivy.clock import Clock
+from kivy.config import Config
+
+Config.set("graphics", "width", "400")
+Config.set("graphics", "height", "700")
+Config.set("graphics", "resizable", "0")
 
 import csv
 from datetime import datetime
@@ -29,52 +35,94 @@ stdout_handler = logging.StreamHandler(sys.stdout)
 stdout_handler.setFormatter(logging.Formatter('--> [%(levelname)-8s] - [Line %(lineno)d : def %(funcName)s : %(filename)s] - %(message)s'))
 logger.addHandler(stdout_handler)
 
+# global last_request_info
+
+# last_request_info = {
+#     "humidity": None,
+#     "temperature": None,
+#     "room": None
+#     }
+
 user = {'Valeriy': '1111'}
 
+class RoundedButton(Button):
+    def __init__(self, **kwargs):
+        super(RoundedButton, self).__init__(**kwargs)
+        self.background_color = (0, 0, 0, 0) # Убираем стандартный фон
+        self.bind(pos=self.update_graphics, size=self.update_graphics)
+        self.canvas.before.clear()
+        with self.canvas.before:
+            Color(0.2, 0.6, 1, 1)
+            self.rect = RoundedRectangle(size=self.size, pos=self.pos, radius=[(20, 20)])
+        with self.canvas.after:
+            Color(0, 0, 0, 0.3)
+            self.shadow = RoundedRectangle(size=(self.width + 10, self.height + 10), pos=(self.x - 5, self.y - 5), radius=[(20, 20)])
+
+    def update_graphics(self, *args):
+        self.rect.pos = self.pos
+        self.rect.size = self.size
+        self.shadow.pos = (self.x - 5, self.y - 5)
+        self.shadow.size = (self.width + 10, self.height + 10)
+
+
 class MainApp(App):
+    # text2 =''
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.log_text = ""
+        
 
     def for_log(self, message):
-        self.log_text += message + "\n"
+        # self.log_text += message + "\n"
+        self.log_text = message + "\n"
         if hasattr(self, 'log_label'):
             self.log_label.text = self.log_text
 
+    # @classmethod
+    # def for_label(cls, massage):
+    #     cls.text2 = massage
+    #     if hasattr(self, 'label'):
+    #         cls.label.text = cls.text2      
+
     def build(self):
-        self.label = Label(text="Сервер запущен")
-        self.log_label = Label(text="", size_hint_y=None, height=200)
+        self.label = Label(text="Приветствую")
+        self.log_label = Label(text="", size_hint_y=None)
         layout = BoxLayout(orientation='vertical')
         self.wg = Widget()
-        self.end = Button(text='Остановить сервер', 
+        self.end = RoundedButton(text='Остановить сервер', 
                           pos=(10, 230), 
                           size_hint=(None, None), 
                           size=(200, 100),
                           on_press=self.on_stop,
                           on_release=self.clear)
-        self.start = Button(text='Запустить сервер', 
+        self.start = RoundedButton(text='Запустить сервер', 
                           pos=(10, 120), 
                           size_hint=(None, None), 
                           size=(150, 100),
-                          on_press=self.start_server)     
-        self.exit_button = Button(text='Выход',
+                          on_press=self.start_server,
+                          on_release=self.clear)     
+        self.exit_button = RoundedButton(text='Выход',
                           pos=(10, 10), 
                           size_hint=(None, None), 
                           size=(100, 100),
                           on_press=self.exit_press,
                           on_release=self.exit_release)             
-                
+        
+        layout.add_widget(self.log_label)               
         layout.add_widget(self.label)
-        layout.add_widget(self.log_label)
         self.wg.add_widget(self.end)
         self.wg.add_widget(self.start)
         self.wg.add_widget(self.exit_button)
         layout.add_widget(self.wg)
-        self.start_server()
+        # self.start_server()
+
+        # Clock.schedule_interval(self.update_request_label, 1)
+
         return layout
    
     def start_server(self, instance=None):
-        self.for_log("Запуск сервера в отдельном процессе...")
+        self.for_log("Запуск сервера")
+        logger.info("Запуск сервера в отдельном процессе...")
         self.server_process = Process(target=run_server, daemon=True)
         self.server_process.start()
         if instance:
@@ -91,6 +139,7 @@ class MainApp(App):
             self.server_process.terminate()
             self.server_process.join()
             self.for_log("Серверный процесс завершён.")
+            logger.info("Серверный процесс завершён.")
         else:
             self.for_log("Серверный процесс не был запущен.")
         if instance:
@@ -104,7 +153,6 @@ class MainApp(App):
     def clear(self, instance):
         self.wg.canvas.before.clear()
 
-
     def exit_press(self, instance):
         if instance:
             with self.wg.canvas.before:
@@ -117,8 +165,20 @@ class MainApp(App):
     def exit_release(self, instance=None):
         App.get_running_app().stop()
 
+    # def update_request_label(self, dt):
+    #     info = last_request_info
+    #     if info["humidity"]:
+    #         self.label = (
+    #             f"humidity: {info['humidity']}\n"
+    #             f"temperature: {info['temperature']}\n"
+    #             f"room: {info['room']}"
+    #         )
+    #     else:
+    #         self.label = "Нет запросов"
+
 @app.post("/setdata/")
 async def climate_data(cl: Climate): 
+    # global last_request_info
     '''Хендлер для записи данных Climate в файл data.csv
     Запрос должен приходить в виде JSON файла'''  
     
@@ -146,6 +206,12 @@ async def climate_data(cl: Climate):
 
     logger.info('Запись в .xlsx прошла успешно!')
 
+    # last_request_info = {
+    # "humidity": cl.humidity,
+    # "temperature": cl.temperature,
+    # "room": cl.room
+    # }
+    # MainApp.for_label()
 
     return {"humidity": cl.humidity, "temperature": cl.temperature, "room": cl.room, "login": cl.login,"creation_date": cl.creation_date}
 
@@ -168,14 +234,16 @@ async def avt(login, password):
 async def for_info(room):
     """Хэндлер для проверки актуальности полученных данных"""
     logger.info('Сработал хендлер for_info!')
-    with open('data.csv', encoding='utf-8') as file:
-        rows = csv.DictReader(file)
-        return {max(datetime.fromisoformat(row['date']) for row in rows if row['room'] == room)}
-    
+    try:
+        with open('data.csv', encoding='utf-8') as file:
+            rows = csv.DictReader(file)
+            return {max(datetime.fromisoformat(row['date']) for row in rows if row['room'] == room)}
+    except Exception as e:
+        logger.error(f'{e}')
+        
 # Отдельная функция для запуска сервера
 def run_server():
     uvicorn.run(app, host='192.168.1.33', port=8066)
-
 
 if __name__ == "__main__":
     from multiprocessing import freeze_support
