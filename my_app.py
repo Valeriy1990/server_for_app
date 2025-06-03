@@ -7,22 +7,15 @@ from datetime import datetime
 from models import User, Climate
 from loggers import logger
 from fastapi import FastAPI
-import uvicorn
-import logging
-import sys
-from environs import Env
 import os.path
-
+from environs import Env
 import pandas as pd
 
 app = FastAPI()
 
-logger = logging.getLogger(__name__)
-stdout_handler = logging.StreamHandler(sys.stdout)
-stdout_handler.setFormatter(logging.Formatter('--> [%(levelname)-8s] - [Line %(lineno)d : def %(funcName)s : %(filename)s] - %(message)s'))
-logger.addHandler(stdout_handler)
-
-user = {'Valeriy': '1111'}
+env = Env()  # Создаем экземпляр класса Env
+env.read_env(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\inter.env') # Методом read_env() читаем файл .env и загружаем из него переменные в окружение
+user = env('user')
 
 @app.post("/setdata/")
 async def climate_data(cl: Climate): 
@@ -58,7 +51,6 @@ async def climate_data(cl: Climate):
 @app.get("/hello/")
 async def get_hello():
     """Хэндлер для проверки соединения с клиентом"""
-    logger.info('Связь с клиентом!')
     return {'Hello client'}
 
 @app.get("/avt/")
@@ -75,13 +67,10 @@ async def avt(login, password):
 async def for_info(room):
     """Хэндлер для проверки актуальности полученных данных"""
     logger.info('Сработал хендлер for_info!')
-    with open('data.csv', encoding='utf-8') as file:
-        rows = csv.DictReader(file)
-        return {max(datetime.fromisoformat(row['date']) for row in rows if row['room'] == room)}
-
-
-
-if __name__ == "__main__":
-    uvicorn.run('main:app', host='192.168.1.33', port=8066, reload=True)
-    # uvicorn.run('main:app', host='127.0.0.1', port=8000, reload=True)
-    # uvicorn.run('main:app', host='127.0.0.1', port=8000, reload=True)
+    try:
+        with open('data.csv', encoding='utf-8') as file:
+            rows = csv.DictReader(file)
+            return {max(datetime.fromisoformat(row['date']) for row in rows if row['room'] == room)}
+    except Exception as e:
+        logger.error(f'{e}')
+ 
