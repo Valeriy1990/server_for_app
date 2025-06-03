@@ -8,23 +8,21 @@ from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.widget import Widget
 from kivy.graphics import BoxShadow, Color, RoundedRectangle
-# from kivy.clock import Clock
 from kivy.config import Config
+
 
 Config.set("graphics", "width", "400")
 Config.set("graphics", "height", "700")
 Config.set("graphics", "resizable", "0")
 
-import csv
+# from kivy.uix.textinput import TextInput
 from datetime import datetime
-from models import User, Climate
 from loggers import logger
+import matplotlib.pyplot as plt
 import uvicorn
-from fastapi import FastAPI
 import logging
 import sys
 from environs import Env
-import os.path
 from multiprocessing import Process
 import pandas as pd
 from docxtpl import DocxTemplate
@@ -36,8 +34,6 @@ env.read_env('inter.env') # Методом read_env() читаем файл .env
 ip = env('ip')  # Получаем и сохраняем значение переменной окружения в переменную
 port = env('PORT')
 user = env('user')
-
-# app = FastAPI()
 
 logger = logging.getLogger(__name__)
 stdout_handler = logging.StreamHandler(sys.stdout)
@@ -67,7 +63,6 @@ class MainApp(App):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.log_text = ""
-        
 
     def for_log(self, message):
         # self.log_text += message + "\n"
@@ -103,7 +98,21 @@ class MainApp(App):
                           size_hint=(None, None), 
                           size=(270, 100),
                           on_press=self.docx_press,
-                          on_release=self.clear)   
+                          on_release=self.clear)  
+        self.gr_button = RoundedButton(text='Показать график',
+                          pos=(170, 120), 
+                          size_hint=(None, None), 
+                          size=(220, 100),
+                          on_press=self.gr_press,
+                          on_release=self.clear) 
+        # self.TextInput = TextInput(text="",
+        #                         multiline=False,
+        #                         readonly=False,
+        #                         font_size = 20,
+        #                         halign="center",
+        #                         pos=(220, 260), 
+        #                         size_hint=(None, None), 
+        #                         size=(165, 40))
         
         layout.add_widget(self.log_label)               
         layout.add_widget(self.label)
@@ -111,6 +120,8 @@ class MainApp(App):
         self.wg.add_widget(self.start)
         self.wg.add_widget(self.exit_button)
         self.wg.add_widget(self.docx_button)
+        self.wg.add_widget(self.gr_button)
+        # self.wg.add_widget(self.TextInput)
         layout.add_widget(self.wg)
 
         return layout
@@ -170,91 +181,57 @@ class MainApp(App):
                     blur_radius=40)
 
         context = {'date' : datetime.now().date()}
-        try:
-            self.for_log("Запись в doc файл")
-            logger.info(f'docx_press')
-            doc = DocxTemplate(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\Шаблон.docx')
-            
-            data = pd.read_csv(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\data.csv', delimiter=',')
-            logger.info(f'docx_press')
-            for num in (num for num in range(536,549) if num != 547):
-                if num in tuple(data['room']):
-                    context[f'room_{num}'] = num
-                    context[f'humidity_{num}'] = data.query(f'room == {num}').iloc[-1].humidity
-                    context[f'time_{num}'] = datetime.fromisoformat(data.query(f'room == {num}').iloc[-1].date).strftime('%H:%M:%S')
-                    context[f'temperature_{num}'] = data.query(f'room == {num}').iloc[-1].temperature
-
-            doc.render(context)
-            doc.save(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\Отчёт.docx')
-        except Exception as e:
-            logger.error(f'{e}')
-
-
-# @app.post("/setdata/")
-# async def climate_data(cl: Climate): 
-#     # global last_request_info
-#     '''Хендлер для записи данных Climate в файл data.csv
-#     Запрос должен приходить в виде JSON файла'''  
-    
-#     logger.info('Принимает данные с клиента!')
-
-#     if not os.path.exists('data.csv'):
-#         exists_csv = True
-#     else:
-#         exists_csv = False
-
-#     with open('data.csv', 'a', encoding='utf-8', newline='') as file:
-#         writer = csv.writer(file)
-#         if exists_csv:
-#             writer.writerow(['humidity', 'temperature', "room", "login", 'date'])
-#         writer.writerow([cl.humidity, cl.temperature, cl.room, cl.login, cl.creation_date])
-#         logger.info('Запись в data.csv прошла успешно!')
-    
-#     # Reading the csv file
-#     df_new = pd.read_csv('data.csv')
-
-#     # saving xlsx file
-#     GFG = pd.ExcelWriter('data.xlsx')
-#     df_new.to_excel(GFG,  sheet_name='Климатика', index=False)
-#     GFG._save()
-
-#     logger.info('Запись в .xlsx прошла успешно!')
-
-#     # last_request_info = {
-#     # "humidity": cl.humidity,
-#     # "temperature": cl.temperature,
-#     # "room": cl.room
-#     # }
-#     # MainApp.for_label()
-
-#     return {"humidity": cl.humidity, "temperature": cl.temperature, "room": cl.room, "login": cl.login,"creation_date": cl.creation_date}
-
-# @app.get("/hello/")
-# async def get_hello():
-#     """Хэндлер для проверки соединения с клиентом"""
-#     return {'Hello client'}
-
-# @app.get("/avt/")
-# async def avt(login, password):
-#     """Хэндлер для аутентификации"""
-#     logger.info('Аутентификация!')
-#     if login in user:
-#         if password == user[login]:
-#             return True
-#     else:
-#         return False
-    
-# @app.get("/for_info/")
-# async def for_info(room):
-#     """Хэндлер для проверки актуальности полученных данных"""
-#     logger.info('Сработал хендлер for_info!')
-#     try:
-#         with open('data.csv', encoding='utf-8') as file:
-#             rows = csv.DictReader(file)
-#             return {max(datetime.fromisoformat(row['date']) for row in rows if row['room'] == room)}
-#     except Exception as e:
-#         logger.error(f'{e}')
         
+        self.for_log("Запись в doc файл")
+        logger.info(f'docx_press')
+        doc = DocxTemplate(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\Шаблон.docx')
+        self.data = pd.read_csv(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\data.csv', delimiter=',')
+            
+        logger.info(f'docx_press')
+        for num in (num for num in range(536,549) if num != 547):
+            if num in tuple(self.data['room']):
+                res = self.data.query(f'room == {num}')
+                context[f'room_{num}'] = num
+
+                context[f'humidity_{num}_1'] = res.iloc[-1].humidity
+                context[f'time_{num}_1'] = datetime.fromisoformat(res.iloc[-1].date).strftime('%H:%M:%S')
+                context[f'temperature_{num}_1'] = res.iloc[-1].temperature
+
+                context[f'humidity_{num}_2'] = res.iloc[-2].humidity
+                context[f'time_{num}_2'] = datetime.fromisoformat(res.iloc[-2].date).strftime('%H:%M:%S')
+                context[f'temperature_{num}_2'] = res.iloc[-2].temperature
+
+        doc.render(context)
+        doc.save(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\Отчёт.docx')
+
+    def gr_press(self, instance):
+        if instance:
+            with self.wg.canvas.before:
+                Color(1, 0, 1, 1)
+                BoxShadow(
+                    pos=instance.pos,
+                    size=instance.size,
+                    blur_radius=40)
+
+        # if self.TextInput.text in tuple(map(str, self.data['room'])):
+        #     self.data = pd.read_csv(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\data.csv', delimiter=',')
+  
+        #     data = self.data.query(f'room == {self.TextInput.text}')
+
+        #     plt.show()
+        #     # Данные для графика:  
+        #     x = tuple(str(datetime.fromisoformat(dt).date()) for dt in data['date'])
+        #     y1 = data['humidity'] 
+        #     y2 = data['temperature']
+        #     # Создание линейного графика:  
+        #     plt.plot(x, y1)  
+        #     plt.plot(x, y2) 
+        #     plt.ylabel('Влажность / Температура ')
+        #     plt.xlabel('Дата')
+        #     plt.legend(['Влажность','Температура'], loc='upper left')
+        #     # Отображение графика:  
+        #     plt.show()  
+
 # Отдельная функция для запуска сервера
 def run_server():
     uvicorn.run(app, host=str(ip), port=int(port))
