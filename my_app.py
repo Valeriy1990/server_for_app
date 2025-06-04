@@ -16,6 +16,7 @@ app = FastAPI()
 
 env = Env()  # Создаем экземпляр класса Env
 env.read_env(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\inter.env') # Методом read_env() читаем файл .env и загружаем из него переменные в окружение
+# env.read_env('inter.env')
 user = env('user')
 
 logger = logging.getLogger(__name__)

@@ -24,11 +24,11 @@ logging_config = {
 
     },
     'loggers': {
-        'MainScreen': {
+        'main': {
             'level': 'INFO',
             'handlers': ['stdout']
         },
-        'Screen': {
+        'my_app': {
             'level': 'INFO',
             'handlers': ['stdout']
         }
