@@ -39,7 +39,8 @@ user = env('user')
 
 logger = logging.getLogger(__name__)
 stdout_handler = logging.StreamHandler(sys.stdout)
-stdout_handler.setFormatter(logging.Formatter('--> [%(levelname)-8s] - [Line %(lineno)d : def %(funcName)s : %(filename)s] - %(message)s'))
+# stdout_handler.setFormatter(logging.Formatter('--> [%(levelname)-8s] - [Line %(lineno)d : def %(funcName)s : %(filename)s] - %(message)s'))
+stdout_handler.setFormatter(logging.Formatter('--> %(message)s'))
 logger.addHandler(stdout_handler)
 
 class RoundedButton(Button):
@@ -62,10 +63,16 @@ class RoundedButton(Button):
         self.shadow.size = (self.width + 10, self.height + 10)
 
 class MainApp(App):
-    buttons = (num for num in range(536,549) if num != 547)
+    buttons = tuple(num for num in range(536,550) if num != 547)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.log_text = ""
+        try:
+            # self.data = pd.read_csv(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\data.csv', delimiter=',')
+            self.data = pd.read_csv('data.csv', delimiter=',')
+        except:
+            self.data = None
 
     def for_log(self, message):
         # self.log_text += message + "\n"
@@ -78,6 +85,7 @@ class MainApp(App):
         self.log_label = Label(text="", size_hint_y=None)
         layout = BoxLayout(orientation='vertical')
         self.wg = Widget()
+        
         self.end = RoundedButton(text='Остановить сервер', 
                           pos=(10, 230), 
                           size_hint=(None, None), 
@@ -102,15 +110,17 @@ class MainApp(App):
                           size=(270, 100),
                           on_press=self.docx_press,
                           on_release=self.clear)  
-        self.gr_button = RoundedButton(text='Показать график',
-                          pos=(170, 120), 
-                          size_hint=(None, None), 
-                          size=(220, 100),
-                          on_press=self.gr_press,
-                          on_release=self.clear) 
+        # self.gr_button = RoundedButton(text='Показать график',
+                        #   pos=(170, 120), 
+                        #   size_hint=(None, None), 
+                        #   size=(220, 100),
+                        #   on_press=self.gr_press,
+                        #   on_release=self.clear) 
         
         tb = TabbedPanel(do_default_tab=False, tab_pos="top_left")
         tbi = TabbedPanelItem(text="Линия")
+        tbi_1 = TabbedPanelItem(text="...")
+        tbi_2 = TabbedPanelItem(text="...")
         bl = GridLayout(rows=3)
 
         for num in self.buttons:
@@ -121,9 +131,10 @@ class MainApp(App):
             button_room.name = str(num)
             bl.add_widget(button_room)
             tbi.add_widget(bl) 
+        
         tb.add_widget(tbi)
- 
-
+        tb.add_widget(tbi_1)
+        tb.add_widget(tbi_2)
         layout.add_widget(tb)
         layout.add_widget(self.log_label)               
         layout.add_widget(self.label)
@@ -131,8 +142,7 @@ class MainApp(App):
         self.wg.add_widget(self.start)
         self.wg.add_widget(self.exit_button)
         self.wg.add_widget(self.docx_button)
-        self.wg.add_widget(self.gr_button)
-
+        # self.wg.add_widget(self.gr_button)
         layout.add_widget(self.wg)
 
         return layout
@@ -194,9 +204,9 @@ class MainApp(App):
         context = {'date' : datetime.now().date()}
         
         self.for_log("Запись в doc файл")
-        logger.info(f'docx_press')
-        doc = DocxTemplate(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\Шаблон.docx')
-        self.data = pd.read_csv(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\data.csv', delimiter=',')
+        logger.info(f'Запись в doc файл')
+        # doc = DocxTemplate(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\Шаблон.docx')
+        doc = DocxTemplate('Шаблон.docx')
             
         logger.info(f'docx_press')
         for num in self.buttons:
@@ -213,7 +223,8 @@ class MainApp(App):
                 context[f'temperature_{num}_2'] = res.iloc[-2].temperature
 
         doc.render(context)
-        doc.save(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\Отчёт.docx')
+        # doc.save(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\Отчёт.docx')
+        doc.save('Отчёт.docx')
 
     def gr_press(self, instance):
         if instance:
@@ -224,11 +235,9 @@ class MainApp(App):
                     size=instance.size,
                     blur_radius=40)
 
-        self.data = pd.read_csv(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\data.csv', delimiter=',')
-
         if instance.name in tuple(map(str, self.data['room'])):
             data = self.data.query(f'room == {instance.name}')
-            plt.show()
+
             # Данные для графика:  
             x = tuple(str(datetime.fromisoformat(dt).date()) for dt in data['date'])
             y1 = data['humidity'] 
