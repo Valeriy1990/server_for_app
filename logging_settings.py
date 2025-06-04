@@ -8,7 +8,7 @@ logging_config = {
             'format': '--> [%(levelname)-8s] - %(name)s:%(funcName)s - %(message)s'
         },
         'formatter_1': {
-            'format': '--> [%(levelname)-8s] - [Line %(lineno)d : def %(funcName)s : %(filename)s] - %(message)s'
+            'format': '--> %(message)s'
         }
     },
     'handlers': {
