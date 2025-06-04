@@ -7,7 +7,7 @@ from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.widget import Widget
-from kivy.graphics import BoxShadow, Color, RoundedRectangle
+from kivy.graphics import BoxShadow, Color
 from kivy.config import Config
 from kivy.uix.tabbedpanel import TabbedPanel, TabbedPanelItem
 from kivy.uix.gridlayout import GridLayout
@@ -29,6 +29,9 @@ from multiprocessing import Process
 import pandas as pd
 from docxtpl import DocxTemplate
 from my_app import app
+from models import RoundedButton
+from logging_settings import logging_config
+import logging.config
 
 env = Env()  # Создаем экземпляр класса Env
 env.read_env('inter.env') # Методом read_env() читаем файл .env и загружаем из него переменные в окружение
@@ -37,30 +40,14 @@ ip = env('ip')  # Получаем и сохраняем значение пер
 port = env('PORT')
 user = env('user')
 
-logger = logging.getLogger(__name__)
-stdout_handler = logging.StreamHandler(sys.stdout)
+# logger = logging.getLogger(__name__)
+# stdout_handler = logging.StreamHandler(sys.stdout)
 # stdout_handler.setFormatter(logging.Formatter('--> [%(levelname)-8s] - [Line %(lineno)d : def %(funcName)s : %(filename)s] - %(message)s'))
-stdout_handler.setFormatter(logging.Formatter('--> %(message)s'))
-logger.addHandler(stdout_handler)
+# stdout_handler.setFormatter(logging.Formatter('--> %(message)s'))
+# logger.addHandler(stdout_handler)
 
-class RoundedButton(Button):
-    def __init__(self, **kwargs):
-        super(RoundedButton, self).__init__(**kwargs)
-        self.background_color = (0, 0, 0, 0) # Убираем стандартный фон
-        self.bind(pos=self.update_graphics, size=self.update_graphics)
-        self.canvas.before.clear()
-        with self.canvas.before:
-            Color(0.2, 0.6, 1, 1)
-            self.rect = RoundedRectangle(size=self.size, pos=self.pos, radius=[(20, 20)])
-        with self.canvas.after:
-            Color(0, 0, 0, 0.3)
-            self.shadow = RoundedRectangle(size=(self.width + 10, self.height + 10), pos=(self.x - 5, self.y - 5), radius=[(20, 20)])
-
-    def update_graphics(self, *args):
-        self.rect.pos = self.pos
-        self.rect.size = self.size
-        self.shadow.pos = (self.x - 5, self.y - 5)
-        self.shadow.size = (self.width + 10, self.height + 10)
+logging.config.dictConfig(logging_config)
+logger = logging.getLogger(__name__)
 
 class MainApp(App):
     buttons = tuple(num for num in range(536,550) if num != 547)
@@ -69,9 +56,10 @@ class MainApp(App):
         super().__init__(**kwargs)
         self.log_text = ""
         try:
-            # self.data = pd.read_csv(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\data.csv', delimiter=',')
-            self.data = pd.read_csv('data.csv', delimiter=',')
-        except:
+            self.data = pd.read_csv(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\data.csv', delimiter=',')
+            # self.data = pd.read_csv('data.csv', delimiter=',')
+        except Exception as e:
+            logger.info(f'{e}')
             self.data = None
 
     def for_log(self, message):
@@ -110,12 +98,6 @@ class MainApp(App):
                           size=(270, 100),
                           on_press=self.docx_press,
                           on_release=self.clear)  
-        # self.gr_button = RoundedButton(text='Показать график',
-                        #   pos=(170, 120), 
-                        #   size_hint=(None, None), 
-                        #   size=(220, 100),
-                        #   on_press=self.gr_press,
-                        #   on_release=self.clear) 
         
         tb = TabbedPanel(do_default_tab=False, tab_pos="top_left")
         tbi = TabbedPanelItem(text="Линия")
@@ -142,7 +124,6 @@ class MainApp(App):
         self.wg.add_widget(self.start)
         self.wg.add_widget(self.exit_button)
         self.wg.add_widget(self.docx_button)
-        # self.wg.add_widget(self.gr_button)
         layout.add_widget(self.wg)
 
         return layout
@@ -205,10 +186,9 @@ class MainApp(App):
         
         self.for_log("Запись в doc файл")
         logger.info(f'Запись в doc файл')
-        # doc = DocxTemplate(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\Шаблон.docx')
-        doc = DocxTemplate('Шаблон.docx')
+        doc = DocxTemplate(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\Шаблон.docx')
+        # doc = DocxTemplate('Шаблон.docx')
             
-        logger.info(f'docx_press')
         for num in self.buttons:
             if num in tuple(self.data['room']):
                 res = self.data.query(f'room == {num}')
@@ -222,9 +202,12 @@ class MainApp(App):
                 context[f'time_{num}_2'] = datetime.fromisoformat(res.iloc[-2].date).strftime('%H:%M:%S')
                 context[f'temperature_{num}_2'] = res.iloc[-2].temperature
 
-        doc.render(context)
-        # doc.save(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\Отчёт.docx')
-        doc.save('Отчёт.docx')
+        try:
+            doc.render(context)
+            doc.save(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\Отчёт.docx')
+            # doc.save('Отчёт.docx')
+        except Exception as e:
+            logger.info(f'{e}')
 
     def gr_press(self, instance):
         if instance:
