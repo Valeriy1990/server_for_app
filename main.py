@@ -9,6 +9,8 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.widget import Widget
 from kivy.graphics import BoxShadow, Color, RoundedRectangle
 from kivy.config import Config
+from kivy.uix.tabbedpanel import TabbedPanel, TabbedPanelItem
+from kivy.uix.gridlayout import GridLayout
 
 
 Config.set("graphics", "width", "400")
@@ -60,6 +62,7 @@ class RoundedButton(Button):
         self.shadow.size = (self.width + 10, self.height + 10)
 
 class MainApp(App):
+    buttons = (num for num in range(536,549) if num != 547)
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.log_text = ""
@@ -71,7 +74,7 @@ class MainApp(App):
             self.log_label.text = self.log_text 
 
     def build(self):
-        self.label = Label(text="Приветствую")
+        self.label = Label(text="")  # Надо как-то убрать
         self.log_label = Label(text="", size_hint_y=None)
         layout = BoxLayout(orientation='vertical')
         self.wg = Widget()
@@ -105,15 +108,23 @@ class MainApp(App):
                           size=(220, 100),
                           on_press=self.gr_press,
                           on_release=self.clear) 
-        # self.TextInput = TextInput(text="",
-        #                         multiline=False,
-        #                         readonly=False,
-        #                         font_size = 20,
-        #                         halign="center",
-        #                         pos=(220, 260), 
-        #                         size_hint=(None, None), 
-        #                         size=(165, 40))
         
+        tb = TabbedPanel(do_default_tab=False, tab_pos="top_left")
+        tbi = TabbedPanelItem(text="Линия")
+        bl = GridLayout(rows=3)
+
+        for num in self.buttons:
+            button_room = Button(size_hint=(0.2, 0.1), 
+                                 text=str(num),
+                                 on_press=self.gr_press,
+                                 on_release=self.clear)
+            button_room.name = str(num)
+            bl.add_widget(button_room)
+            tbi.add_widget(bl) 
+        tb.add_widget(tbi)
+ 
+
+        layout.add_widget(tb)
         layout.add_widget(self.log_label)               
         layout.add_widget(self.label)
         self.wg.add_widget(self.end)
@@ -121,7 +132,7 @@ class MainApp(App):
         self.wg.add_widget(self.exit_button)
         self.wg.add_widget(self.docx_button)
         self.wg.add_widget(self.gr_button)
-        # self.wg.add_widget(self.TextInput)
+
         layout.add_widget(self.wg)
 
         return layout
@@ -188,7 +199,7 @@ class MainApp(App):
         self.data = pd.read_csv(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\data.csv', delimiter=',')
             
         logger.info(f'docx_press')
-        for num in (num for num in range(536,549) if num != 547):
+        for num in self.buttons:
             if num in tuple(self.data['room']):
                 res = self.data.query(f'room == {num}')
                 context[f'room_{num}'] = num
@@ -213,24 +224,23 @@ class MainApp(App):
                     size=instance.size,
                     blur_radius=40)
 
-        # if self.TextInput.text in tuple(map(str, self.data['room'])):
-        #     self.data = pd.read_csv(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\data.csv', delimiter=',')
-  
-        #     data = self.data.query(f'room == {self.TextInput.text}')
+        self.data = pd.read_csv(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\data.csv', delimiter=',')
 
-        #     plt.show()
-        #     # Данные для графика:  
-        #     x = tuple(str(datetime.fromisoformat(dt).date()) for dt in data['date'])
-        #     y1 = data['humidity'] 
-        #     y2 = data['temperature']
-        #     # Создание линейного графика:  
-        #     plt.plot(x, y1)  
-        #     plt.plot(x, y2) 
-        #     plt.ylabel('Влажность / Температура ')
-        #     plt.xlabel('Дата')
-        #     plt.legend(['Влажность','Температура'], loc='upper left')
-        #     # Отображение графика:  
-        #     plt.show()  
+        if instance.name in tuple(map(str, self.data['room'])):
+            data = self.data.query(f'room == {instance.name}')
+            plt.show()
+            # Данные для графика:  
+            x = tuple(str(datetime.fromisoformat(dt).date()) for dt in data['date'])
+            y1 = data['humidity'] 
+            y2 = data['temperature']
+            # Создание линейного графика:  
+            plt.plot(x, y1)  
+            plt.plot(x, y2) 
+            plt.ylabel('Влажность / Температура ')
+            plt.xlabel('Дата')
+            plt.legend(['Влажность','Температура'], loc='upper left')
+            # Отображение графика:  
+            plt.show()  
 
 # Отдельная функция для запуска сервера
 def run_server():
