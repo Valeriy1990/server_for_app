@@ -17,9 +17,11 @@ app = FastAPI()
 env = Env()  # Создаем экземпляр класса Env
 # env.read_env(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\inter.env') # Методом read_env() читаем файл .env и загружаем из него переменные в окружение
 env.read_env('inter.env')
-user = env('user')
+user = eval(env('user'))
+print(type(user))
 
 logger = logging.getLogger(__name__)
+logging.getLogger('fastapi').setLevel(logging.WARNING)
 
 logger.propagate = False  # Что бы логи root не дублировались
 
@@ -28,7 +30,7 @@ async def climate_data(cl: Climate):
     '''Хендлер для записи данных Climate в файл data.csv
     Запрос должен приходить в виде JSON файла'''  
     
-    logger.info(f'Принимаем данные от пользователя! {cl.humidity, cl.temperature, cl.room, cl.login, cl.creation_date}')
+    logger.info(f'Принимаем данные от пользователя!\nДата:{cl.creation_date.strftime("%d/%m/%Y, %H:%M:%S")}\nLogin: {cl.login}\nПомещение: {cl.room}\nТемпература: {cl.temperature}\nВлажность: {cl.humidity}')
 
     if not os.path.exists('data.csv'):
         exists_csv = True
@@ -68,7 +70,7 @@ async def avt(login, password):
     """Хэндлер для аутентификации"""
     logger.info('Аутентификация')
     if login in user:
-        if password == user[login]:
+        if password == int(user[login]):
             logger.info(f'Пользователь {login} аутентифицирован')
             return True
     else:

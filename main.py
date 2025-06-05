@@ -48,6 +48,7 @@ user = env('user')
 
 logging.config.dictConfig(logging_config)
 logger = logging.getLogger(__name__)
+logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
 class MainApp(App):
     buttons = tuple(num for num in range(536,550) if num != 547)
@@ -238,7 +239,7 @@ class MainApp(App):
 
 # Отдельная функция для запуска сервера
 def run_server():
-    uvicorn.run(app, host=str(ip), port=int(port))
+    uvicorn.run(app, host=str(ip), port=int(port), log_level="warning")
     # uvicorn.run('main:app', host='127.0.0.1', port=8000, reload=True)
 
 if __name__ == "__main__":
