@@ -70,6 +70,7 @@ class MainApp(App):
             self.log_label.text = self.log_text 
 
     def build(self):
+        self.icon = r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\weather_cloudy_sun_cloud_icon_124155.ico'
         self.label = Label(text="")  # Надо как-то убрать
         self.log_label = Label(text="", size_hint_y=None)
         layout = BoxLayout(orientation='vertical')
