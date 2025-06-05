@@ -15,8 +15,8 @@ import logging
 app = FastAPI()
 
 env = Env()  # Создаем экземпляр класса Env
-env.read_env(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\inter.env') # Методом read_env() читаем файл .env и загружаем из него переменные в окружение
-# env.read_env('inter.env')
+# env.read_env(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\inter.env') # Методом read_env() читаем файл .env и загружаем из него переменные в окружение
+env.read_env('inter.env')
 user = env('user')
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ async def climate_data(cl: Climate):
     '''Хендлер для записи данных Climate в файл data.csv
     Запрос должен приходить в виде JSON файла'''  
     
-    logger.info('Принимаем данные от пользователя!')
+    logger.info(f'Принимаем данные от пользователя! {cl.humidity, cl.temperature, cl.room, cl.login, cl.creation_date}')
 
     if not os.path.exists('data.csv'):
         exists_csv = True

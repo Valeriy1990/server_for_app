@@ -56,8 +56,8 @@ class MainApp(App):
         super().__init__(**kwargs)
         self.log_text = ""
         try:
-            self.data = pd.read_csv(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\data.csv', delimiter=',')
-            # self.data = pd.read_csv('data.csv', delimiter=',')
+            # self.data = pd.read_csv(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\data.csv', delimiter=',')
+            self.data = pd.read_csv('data.csv', delimiter=',')
         except Exception as e:
             logger.info(f'{e}')
             self.data = None
@@ -110,6 +110,7 @@ class MainApp(App):
                                  text=str(num),
                                  on_press=self.gr_press,
                                  on_release=self.clear)
+
             button_room.name = str(num)
             bl.add_widget(button_room)
             tbi.add_widget(bl) 
@@ -183,15 +184,16 @@ class MainApp(App):
                     blur_radius=40)
 
         context = {'date' : datetime.now().date()}
-        
+
         self.for_log("Запись в doc файл")
         logger.info(f'Запись в doc файл')
-        doc = DocxTemplate(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\Шаблон.docx')
-        # doc = DocxTemplate('Шаблон.docx')
+        # doc = DocxTemplate(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\Шаблон.docx')
+        doc = DocxTemplate('Шаблон.docx')
             
         for num in self.buttons:
             if num in tuple(self.data['room']):
-                res = self.data.query(f'room == {num}')
+                # res = self.data.query(f'room == {num}')
+                res = self.data.loc[self.data.room == num]
                 context[f'room_{num}'] = num
 
                 context[f'humidity_{num}_1'] = res.iloc[-1].humidity
@@ -204,8 +206,8 @@ class MainApp(App):
 
         try:
             doc.render(context)
-            doc.save(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\Отчёт.docx')
-            # doc.save('Отчёт.docx')
+            # doc.save(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\Отчёт.docx')
+            doc.save('Отчёт.docx')
         except Exception as e:
             logger.info(f'{e}')
 
