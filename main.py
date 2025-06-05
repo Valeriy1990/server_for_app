@@ -38,7 +38,8 @@ env.read_env('inter.env') # Методом read_env() читаем файл .env
                           
 ip = env('ip')  # Получаем и сохраняем значение переменной окружения в переменную
 port = env('PORT')
-user = env('user')
+user = eval(env('user'))
+print(user)
 
 # logger = logging.getLogger(__name__)
 # stdout_handler = logging.StreamHandler(sys.stdout)

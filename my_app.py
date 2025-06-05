@@ -18,7 +18,6 @@ env = Env()  # Создаем экземпляр класса Env
 # env.read_env(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\inter.env') # Методом read_env() читаем файл .env и загружаем из него переменные в окружение
 env.read_env('inter.env')
 user = eval(env('user'))
-print(type(user))
 
 logger = logging.getLogger(__name__)
 logging.getLogger('fastapi').setLevel(logging.WARNING)
@@ -70,7 +69,7 @@ async def avt(login, password):
     """Хэндлер для аутентификации"""
     logger.info('Аутентификация')
     if login in user:
-        if password == int(user[login]):
+        if password == user[login]:
             logger.info(f'Пользователь {login} аутентифицирован')
             return True
     else:
