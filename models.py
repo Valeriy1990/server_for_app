@@ -4,10 +4,12 @@ from kivy.uix.button import Button
 from kivy.graphics import Color, RoundedRectangle
 
 class User(BaseModel):
+    """Для аутентификации"""
     login: str = ''
     password: str = ''
  
 class Climate(BaseModel):
+    """Формат входящих климатических параметров"""
     humidity: int | float
     temperature: int | float
     room: int
@@ -15,6 +17,7 @@ class Climate(BaseModel):
     creation_date: datetime
 
 class RoundedButton(Button):
+    """Кастомная кнопка"""
     def __init__(self, **kwargs):
         super(RoundedButton, self).__init__(**kwargs)
         self.background_color = (0, 0, 0, 0) # Убираем стандартный фон
