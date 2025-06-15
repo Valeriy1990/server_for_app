@@ -15,7 +15,7 @@ import logging
 app = FastAPI()
 
 env = Env()  # Создаем экземпляр класса Env
-# env.read_env(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\inter.env') # Методом read_env() читаем файл .env и загружаем из него переменные в окружение
+# Методом read_env() читаем файл .env и загружаем из него переменные в окружение
 env.read_env('inter.env')
 user = eval(env('user'))
 
@@ -31,19 +31,20 @@ async def climate_data(cl: Climate):
     
     logger.info(f'Принимаем данные от пользователя!\nДата:{cl.creation_date.strftime("%d/%m/%Y, %H:%M:%S")}\nLogin: {cl.login}\nПомещение: {cl.room}\nТемпература: {cl.temperature}\nВлажность: {cl.humidity}')
 
-    if not os.path.exists('data.csv'):
+    if not os.path.exists('data.csv'):  # Если файла нет в директории для шапки
         exists_csv = True
     else:
         exists_csv = False
 
     with open('data.csv', 'a', encoding='utf-8', newline='') as file:
         writer = csv.writer(file)
-        if exists_csv:
+        if exists_csv: # Шапка
             writer.writerow(['humidity', 'temperature', "room", "login", 'date'])
         writer.writerow([cl.humidity, cl.temperature, cl.room, cl.login, cl.creation_date])
         logger.info('Файл data.csv изменён!')
     
     try:
+        # Дублирование данных в файл exe
         df_new = pd.read_csv('data.csv')
 
         GFG = pd.ExcelWriter('data.xlsx')
@@ -64,7 +65,7 @@ async def get_hello():
     except Exception as e:
         logger.error(f'{e}')
 
-@app.get("/avt/")
+@app.get("/avut/")
 async def avt(login, password):
     """Хэндлер для аутентификации"""
     logger.info('Аутентификация')
@@ -77,7 +78,8 @@ async def avt(login, password):
     
 @app.get("/for_info/")
 async def for_info(room):
-    """Хэндлер для проверки актуальности полученных данных"""
+    """Хэндлер для галочек функции checkbox_state модуля Screen в клиентской части.
+    Возвращает последн дату по запрашиваемому помещению"""
     try:
         with open('data.csv', encoding='utf-8') as file:
             rows = csv.DictReader(file)

@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 logging.basicConfig(level=logging.DEBUG)
 
-# Определяем первый вид форматирования
+# Определяем вид форматирования
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
 # Инициализируем хэндлер, который будет перенаправлять логи в stderr

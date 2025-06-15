@@ -17,13 +17,11 @@ Config.set("graphics", "width", "400")
 Config.set("graphics", "height", "700")
 Config.set("graphics", "resizable", "0")
 
-# from kivy.uix.textinput import TextInput
 from datetime import datetime
 from loggers import logger
 import matplotlib.pyplot as plt
 import uvicorn
 import logging
-import sys
 from environs import Env
 from multiprocessing import Process
 import pandas as pd
@@ -35,42 +33,38 @@ import logging.config
 
 env = Env()  # Создаем экземпляр класса Env
 env.read_env('inter.env') # Методом read_env() читаем файл .env и загружаем из него переменные в окружение
-                          
-ip = env('ip')  # Получаем и сохраняем значение переменной окружения в переменную
+        
+# Получаем и сохраняем значениz переменных из окружения                  
+ip = env('ip') 
 port = env('PORT')
 user = eval(env('user'))
-
-# logger = logging.getLogger(__name__)
-# stdout_handler = logging.StreamHandler(sys.stdout)
-# stdout_handler.setFormatter(logging.Formatter('--> [%(levelname)-8s] - [Line %(lineno)d : def %(funcName)s : %(filename)s] - %(message)s'))
-# stdout_handler.setFormatter(logging.Formatter('--> %(message)s'))
-# logger.addHandler(stdout_handler)
 
 logging.config.dictConfig(logging_config)
 logger = logging.getLogger(__name__)
 logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
 class MainApp(App):
-    buttons = tuple(num for num in range(536,550) if num != 547)
+    buttons = tuple(num for num in range(536,550) if num != 547)  #  Кортеж состоящий из помещений
 
     def __init__(self, **kwargs):
+        """Инициализация"""
         super().__init__(**kwargs)
         self.log_text = ""
         try:
-            # self.data = pd.read_csv(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\data.csv', delimiter=',')
             self.data = pd.read_csv('data.csv', delimiter=',')
         except Exception as e:
             logger.info(f'{e}')
-            self.data = None
-
+            self.data = None  # Если баззы данных ещё нет. Сделано для функции docx_press
+            
     def for_log(self, message):
-        # self.log_text += message + "\n"
+        """Окно действий сервера"""
         self.log_text = message + "\n"
         if hasattr(self, 'log_label'):
             self.log_label.text = self.log_text 
 
     def build(self):
-        self.icon = r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\weather_cloudy_sun_cloud_icon_124155.ico'
+        """Создание графических объектов"""
+        self.icon = 'weather_cloudy_sun_cloud_icon_124155.ico'
         self.label = Label(text="")  # Надо как-то убрать
         self.log_label = Label(text="", size_hint_y=None)
         layout = BoxLayout(orientation='vertical')
@@ -102,9 +96,7 @@ class MainApp(App):
                           on_release=self.clear)  
         
         tb = TabbedPanel(do_default_tab=False, tab_pos="top_left")
-        tbi = TabbedPanelItem(text="Линия")
-        tbi_1 = TabbedPanelItem(text="...")
-        tbi_2 = TabbedPanelItem(text="...")
+        tbi = TabbedPanelItem(text="График")
         bl = GridLayout(rows=3)
 
         for num in self.buttons:
@@ -118,8 +110,6 @@ class MainApp(App):
             tbi.add_widget(bl) 
         
         tb.add_widget(tbi)
-        tb.add_widget(tbi_1)
-        tb.add_widget(tbi_2)
         layout.add_widget(tb)
         layout.add_widget(self.log_label)               
         layout.add_widget(self.label)
@@ -132,11 +122,12 @@ class MainApp(App):
         return layout
    
     def start_server(self, instance=None):
+        """Запуск сервера в одельном от kivy процессе"""
         self.for_log("Запуск сервера")
         logger.info("Запуск сервера в отдельном процессе...")
         self.server_process = Process(target=run_server, daemon=True)
         self.server_process.start()
-        if instance:
+        if instance:  # Цвет при нажатии
             with self.wg.canvas.before:
                 Color(1, 0, 1, 1)
                 BoxShadow(
@@ -145,15 +136,16 @@ class MainApp(App):
                     blur_radius=40)
 
     def on_stop(self, instance=None):
+        """Оставновить сервер"""
         if hasattr(self, 'server_process'):
             self.for_log("Попытка остановить серверный процесс...")
-            self.server_process.terminate()
-            self.server_process.join()
+            self.server_process.terminate()   # Остановить серверный процесс
+            self.server_process.join()   # Продолжить основной поток
             self.for_log("Серверный процесс завершён.")
             logger.info("Серверный процесс завершён.")
         else:
             self.for_log("Серверный процесс не был запущен.")
-        if instance:
+        if instance:  # Цвет при нажатии
             with self.wg.canvas.before:
                 Color(1, 0, 1, 1)
                 BoxShadow(
@@ -162,10 +154,11 @@ class MainApp(App):
                     blur_radius=40)
                 
     def clear(self, instance):
+        """При отпускании кнопки вернуть основной цвет"""
         self.wg.canvas.before.clear()
 
     def exit_press(self, instance):
-        if instance:
+        if instance:  # Цвет при нажатии
             with self.wg.canvas.before:
                 Color(1, 0, 1, 1)
                 BoxShadow(
@@ -177,7 +170,8 @@ class MainApp(App):
         App.get_running_app().stop()
 
     def docx_press(self, instance):
-        if instance:
+        """Формирование doc файла"""
+        if instance:  # Цвет при нажатии
             with self.wg.canvas.before:
                 Color(1, 0, 1, 1)
                 BoxShadow(
@@ -185,36 +179,35 @@ class MainApp(App):
                     size=instance.size,
                     blur_radius=40)
 
-        context = {'date' : datetime.now().date()}
+        context = {'date' : datetime.now().date()}  #  Актуальная дата формирования отчёта
 
         self.for_log("Запись в doc файл")
         logger.info(f'Запись в doc файл')
-        # doc = DocxTemplate(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\Шаблон.docx')
         doc = DocxTemplate('Шаблон.docx')
             
-        for num in self.buttons:
-            if num in tuple(self.data['room']):
-                # res = self.data.query(f'room == {num}')
+        for num in self.buttons:  # Все номера помещения хранятся в классе MainApp
+            if num in tuple(self.data['room']):  # Если данные по данному помещению есть в базе данных
                 res = self.data.loc[self.data.room == num]
                 context[f'room_{num}'] = num
-
+                # Запись данных до 13:00
                 context[f'humidity_{num}_1'] = res.iloc[-1].humidity
                 context[f'time_{num}_1'] = datetime.fromisoformat(res.iloc[-1].date).strftime('%H:%M:%S')
                 context[f'temperature_{num}_1'] = res.iloc[-1].temperature
-
+                 # Запись данных после 13:00
                 context[f'humidity_{num}_2'] = res.iloc[-2].humidity
                 context[f'time_{num}_2'] = datetime.fromisoformat(res.iloc[-2].date).strftime('%H:%M:%S')
                 context[f'temperature_{num}_2'] = res.iloc[-2].temperature
 
         try:
+            # Создание отчёта
             doc.render(context)
-            # doc.save(r'C:\Users\vbekr\OneDrive\Рабочий стол\Python\server_for_app\Отчёт.docx')
             doc.save('Отчёт.docx')
         except Exception as e:
             logger.info(f'{e}')
 
     def gr_press(self, instance):
-        if instance:
+        """Линейный график из базы данных"""
+        if instance:   # Цвет при нажатии
             with self.wg.canvas.before:
                 Color(1, 0, 1, 1)
                 BoxShadow(
@@ -238,12 +231,12 @@ class MainApp(App):
             # Отображение графика:  
             plt.show()  
 
-# Отдельная функция для запуска сервера
 def run_server():
+    """Функция для запуска сервера"""
     uvicorn.run(app, host=str(ip), port=int(port), log_level="warning")
     # uvicorn.run('main:app', host='127.0.0.1', port=8000, reload=True)
 
 if __name__ == "__main__":
-    from multiprocessing import freeze_support
+    from multiprocessing import freeze_support  # Для запуска сервера в отдельном процессе
     freeze_support()
     MainApp().run()
